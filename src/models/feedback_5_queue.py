@@ -1,0 +1,147 @@
+from o2despy.sandbox import Sandbox
+from datetime import timedelta
+import random
+
+
+class Feedback5Queue(Sandbox):
+    def __init__(self, seed=0, code="Feedback5Queue", capacity=5, iat_mean=1.25, ist_mean=1.0):
+        super().__init__(seed, code)
+        self.capacity = capacity
+        self.iat_mean = iat_mean
+        self.ist_mean = ist_mean
+
+        self.queue_count_1 = 0
+        self.server_count_1 = 0
+        self.queue_count_2 = 0
+        self.server_count_2 = 0
+        self.queue_count_3 = 0
+        self.server_count_3 = 0
+        self.queue_count_4 = 0
+        self.server_count_4 = 0
+        self.queue_count_5 = 0
+        self.server_count_5 = 0
+        self.load_id_counter = 0
+        self.departure_count = 0
+        self.in_system = 0
+
+        self._last_event_time = None
+        self._area_queue_total = 0.0
+        self._area_system = 0.0
+
+        self.schedule(self.arrive, timedelta(hours=random.expovariate(1 / self.iat_mean)))
+
+    def _update_areas(self):
+        now = self.clock_time
+        if self._last_event_time is not None:
+            dt = (now - self._last_event_time).total_seconds() / 3600.0
+            if dt > 0:
+                self._area_queue_total += (self.queue_count_1 + self.queue_count_2 + self.queue_count_3 + self.queue_count_4 + self.queue_count_5) * dt
+                self._area_system += self.in_system * dt
+        self._last_event_time = now
+
+    def arrive(self):
+        self._update_areas()
+        self.in_system += 1
+        self.load_id_counter += 1
+        self.queue_count_1 += 1
+        self.schedule(self.arrive, timedelta(hours=random.expovariate(1 / self.iat_mean)))
+        if self.queue_count_1 > 0 and self.server_count_1 < self.capacity:
+            self.schedule(self.start_1, timedelta(hours=0))
+
+    def start_1(self):
+        self._update_areas()
+        if self.queue_count_1 > 0:
+            self.queue_count_1 -= 1
+            self.server_count_1 += 1
+            self.schedule(self.finish_1, timedelta(hours=random.expovariate(1 / self.ist_mean)))
+
+    def finish_1(self):
+        self._update_areas()
+        if self.server_count_1 > 0:
+            self.server_count_1 -= 1
+            self.queue_count_2 += 1
+        if self.queue_count_1 > 0 and self.server_count_1 < self.capacity:
+            self.schedule(self.start_1, timedelta(hours=0))
+        if self.queue_count_2 > 0 and self.server_count_2 < self.capacity:
+            self.schedule(self.start_2, timedelta(hours=0))
+
+    def start_2(self):
+        self._update_areas()
+        if self.queue_count_2 > 0:
+            self.queue_count_2 -= 1
+            self.server_count_2 += 1
+            self.schedule(self.finish_2, timedelta(hours=random.expovariate(1 / self.ist_mean)))
+
+    def finish_2(self):
+        self._update_areas()
+        if self.server_count_2 > 0:
+            self.server_count_2 -= 1
+            self.queue_count_3 += 1
+        if self.queue_count_2 > 0 and self.server_count_2 < self.capacity:
+            self.schedule(self.start_2, timedelta(hours=0))
+        if self.queue_count_3 > 0 and self.server_count_3 < self.capacity:
+            self.schedule(self.start_3, timedelta(hours=0))
+
+    def start_3(self):
+        self._update_areas()
+        if self.queue_count_3 > 0:
+            self.queue_count_3 -= 1
+            self.server_count_3 += 1
+            self.schedule(self.finish_3, timedelta(hours=random.expovariate(1 / self.ist_mean)))
+
+    def finish_3(self):
+        self._update_areas()
+        if self.server_count_3 > 0:
+            self.server_count_3 -= 1
+            self.queue_count_4 += 1
+        if self.queue_count_3 > 0 and self.server_count_3 < self.capacity:
+            self.schedule(self.start_3, timedelta(hours=0))
+        if self.queue_count_4 > 0 and self.server_count_4 < self.capacity:
+            self.schedule(self.start_4, timedelta(hours=0))
+
+    def start_4(self):
+        self._update_areas()
+        if self.queue_count_4 > 0:
+            self.queue_count_4 -= 1
+            self.server_count_4 += 1
+            self.schedule(self.finish_4, timedelta(hours=random.expovariate(1 / self.ist_mean)))
+
+    def finish_4(self):
+        self._update_areas()
+        if self.server_count_4 > 0:
+            self.server_count_4 -= 1
+            self.queue_count_5 += 1
+        if self.queue_count_4 > 0 and self.server_count_4 < self.capacity:
+            self.schedule(self.start_4, timedelta(hours=0))
+        if self.queue_count_5 > 0 and self.server_count_5 < self.capacity:
+            self.schedule(self.start_5, timedelta(hours=0))
+
+    def start_5(self):
+        self._update_areas()
+        if self.queue_count_5 > 0:
+            self.queue_count_5 -= 1
+            self.server_count_5 += 1
+            self.schedule(self.finish_5, timedelta(hours=random.expovariate(1 / self.ist_mean)))
+
+    def finish_5(self):
+        self._update_areas()
+        if self.server_count_5 > 0:
+            self.server_count_5 -= 1
+        if self.queue_count_5 > 0 and self.server_count_5 < self.capacity:
+            self.schedule(self.start_5, timedelta(hours=0))
+        self.schedule(self.attempt_to_depart, timedelta(hours=0))
+
+    def attempt_to_depart(self):
+        self._update_areas()
+        if random.random() < 0.5:
+            self.queue_count_1 += 1
+            if self.queue_count_1 > 0 and self.server_count_1 < self.capacity:
+                self.schedule(self.start_1, timedelta(hours=0))
+        else:
+            self.schedule(self.depart, timedelta(hours=0))
+
+    def depart(self):
+        self._update_areas()
+        if self.in_system > 0:
+            self.in_system -= 1
+            self.departure_count += 1

@@ -1,4 +1,4 @@
-# Replication Package: On Complexity
+# Semantic Model Complexity for Event Graph Discrete-Event Simulation Models via Abstract State Machines
 
 Reproducible companion repository for the paper *"Semantic Model Complexity for Event Graph Discrete-Event Simulation Models via Abstract State Machines."*.
 
